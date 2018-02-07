@@ -1,0 +1,96 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:                      
+  name: maya-config
+data:
+  maya.properties: |
+    server.default.access.grant=true
+    maya.api.ui.enabled=false
+    api.auth.enabler=github_user:18216179
+    api.auth.github.client.id=34623e04a66e65762fd4
+    api.auth.github.client.secret=7474a49b2b6485da0ebf6943b1f4ae0af14dfb57
+    no.reply.email.address=rakesh.singh@cloudbyte.com
+    no.reply.email.password=LSs-Xea-3XA-W2J
+    slack.config.bot.client.id=306140326769.310640528417
+    slack.config.bot.client.secret=45e225230ffdda556b00e0aac04a8820
+    slack.config.bot.redirect.url=https://uidev.mayacloud.io/organization/integrations>
+    slack.config.bot.oauth.url=https://slack.com/oauth/authorize?client_id=306140326769.310640528417&scope=bot\,incoming-webhook\,commands
+    mayaUrl=https://uidev.mayacloud.io
+    maya.ingress.gke=/mayastore/maya-ingress-gke.yaml
+    maya.ingress.auth=/mayastore/auth
+    maya.cortex.push.url=https://uidev.mayacloud.io/maya-cortex-push/api/prom/push
+    maya.cortex.pull.url=https://uidev.mayacloud.io/maya-cortex-pull/api/prom
+    maya.cortex.am.url=https://uidev.mayacloud.io/maya-cortex-am/>
+    maya.grafana.url=https://uidev.mayacloud.io/maya-grafana/>
+    maya.grafana.admin.password=##maya%%
+    mulebot.alert.url=https://uidev.mayacloud.io/chat-server/maya-events>
+---
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: maya
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app : maya
+    spec:
+      securityContext:
+        fsGroup: 106
+      initContainers:
+      - name: volume-mount-hack
+        image: busybox
+        command: ["sh", "-c", "rm -rf /var/lib/mysql/lost+found"]
+        volumeMounts:
+        - name: maya-database
+          mountPath: /var/lib/mysql
+      containers:
+        - name: maya
+          image: index.docker.io/mayadata/maya-io-server:1517323519
+          imagePullPolicy: Always
+          ports:
+          - containerPort: 8080
+          volumeMounts:
+          - name: maya-database
+            mountPath: /var/lib/mysql
+          - name: maya-store
+            mountPath: /mayastore
+          - name: maya-config
+            mountPath: /var/lib/cattle/etc/maya.properties
+            subPath: maya.properties
+      imagePullSecrets:
+      - name: mayadatasecret
+      volumes:
+      - name: maya-database
+        gcePersistentDisk:
+          pdName: maya-test-disk
+          # in the gke, the disk should already be created in the cluster using the following command
+          # gcloud compute disks create --size 50GB maya-prod-disk
+          fsType: ext4
+      - name: maya-store
+        gcePersistentDisk:
+          pdName: maya-production-test-store-disk
+          # in the gke, the disk should already be created in the cluster using the following command
+          # gcloud compute disks create --size 20GB maya-store-disk
+          fsType: ext4
+      - name: maya-config
+        configMap:
+          name: maya-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: maya
+  name: maya-service
+spec:
+  type: NodePort
+  ports:
+  - name: mayaport
+    port: 8080
+    protocol: TCP
+  selector:
+    app: maya
