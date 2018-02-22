@@ -5,7 +5,7 @@ metadata:
 data:
   maya.properties: |
     server.default.access.grant=true
-    maya.api.ui.enabled=false
+    maya.api.ui.enabled=true
     api.auth.enabler=github_user:18216179
     api.auth.github.client.id=34623e04a66e65762fd4
     api.auth.github.client.secret=7474a49b2b6485da0ebf6943b1f4ae0af14dfb57
@@ -13,17 +13,17 @@ data:
     no.reply.email.password=LSs-Xea-3XA-W2J
     slack.config.bot.client.id=306140326769.310640528417
     slack.config.bot.client.secret=45e225230ffdda556b00e0aac04a8820
-    slack.config.bot.redirect.url=https://uidev.mayacloud.io/organization/integrations>
+    slack.config.bot.redirect.url=https://uidev.mayacloud.io/organization/integrations
     slack.config.bot.oauth.url=https://slack.com/oauth/authorize?client_id=306140326769.310640528417&scope=bot\,incoming-webhook\,commands
     mayaUrl=https://uidev.mayacloud.io
     maya.ingress.gke=/mayastore/maya-ingress-gke.yaml
     maya.ingress.auth=/mayastore/auth
-    maya.cortex.push.url=https://uidev.mayacloud.io/maya-cortex-push/api/prom/push
-    maya.cortex.pull.url=https://uidev.mayacloud.io/maya-cortex-pull/api/prom
-    maya.cortex.am.url=https://uidev.mayacloud.io/maya-cortex-am/>
-    maya.grafana.url=https://uidev.mayacloud.io/maya-grafana/>
+    maya.cortex.push.url=https://uidev-app.mayacloud.io/maya-cortex-push/api/prom/push
+    maya.cortex.pull.url=https://uidev-app.mayacloud.io/maya-cortex-pull/api/prom
+    maya.cortex.am.url=https://uidev-app.mayacloud.io/maya-cortex-am/
+    maya.grafana.url=https://uidev-app.mayacloud.io/maya-grafana/
     maya.grafana.admin.password=##maya%%
-    mulebot.alert.url=https://uidev.mayacloud.io/chat-server/maya-events>
+    mulebot.alert.url=https://uidev-app.mayacloud.io/chat-server/maya-events
 ---
 apiVersion: apps/v1beta1
 kind: Deployment
@@ -49,7 +49,7 @@ spec:
           mountPath: /var/lib/mysql
       containers:
         - name: maya
-          image: index.docker.io/mayadata/maya-io-server:1517323519
+          image: index.docker.io/mayadataio/maya-io-server:staging-6586e2d
           imagePullPolicy: Always
           ports:
           - containerPort: 8080
@@ -72,7 +72,7 @@ spec:
           fsType: ext4
       - name: maya-store
         gcePersistentDisk:
-          pdName: maya-production-test-store-disk
+          pdName: maya-test-store-disk
           # in the gke, the disk should already be created in the cluster using the following command
           # gcloud compute disks create --size 20GB maya-store-disk
           fsType: ext4
